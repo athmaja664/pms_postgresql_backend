@@ -1,0 +1,1 @@
+const proposal = require('../models/Proposals')
