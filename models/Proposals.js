@@ -1,38 +1,32 @@
 const mongoose = require('mongoose')
 const proposalSchema = new mongoose.Schema({
-    projectName: {
-        type: String,
-        required: true,
-        trim: true
+    clientId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref:'AddClient',
+        required: true
     },
-    clientName: {
-        type: String,
-        required: true,
-        trim: true
+    projectId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref:'AddProject',
+        required: true
     },
-    clientEmail: {
+    cost: {
+        type: Number,
+        required: false
+    },
+    status: {
         type: String,
-        required: true,
-        trim: true,
-        lowercase: true,
-        match: [/^\S+@\S+\.\S+$/, 'Please use a valid email']
+        enum: ['Draft', 'Sent', 'Accepted', 'Rejected', 'Archived'], //not aloww cmplt done anything elsein the box
+        default: 'Draft'
+    },
+    documentUrl: {
+        type: String,
+        required: false
     },
     description: {
         type: String,
         required: true,
         trim: true
-    },
-    cost: {
-        type: Number,
-        required: true
-    },
-    status: {
-        type: String,
-        default: 'Pending'
-    },
-    documentUrl: {
-        type: String,
-        required: true
     }
 
 }, { timestamps: true })
