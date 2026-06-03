@@ -7,7 +7,8 @@ const accesslinkSchema = new mongoose.Schema({
     },
     token: {
         type: String,
-        required: true
+        required: true,
+        unique:true
     },
     passwordHash: {
         type: String,
@@ -20,7 +21,7 @@ const accesslinkSchema = new mongoose.Schema({
     },
     isRevoked: {
         type: Boolean,
-        required: false
+        default:false
     }
 }, { timestamps: true })
 module.exports = mongoose.model('AccessLink', accesslinkSchema)

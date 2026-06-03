@@ -5,6 +5,7 @@ const UsersController = require('../controller/UsersController')
 const AddClientsController=require('../controller/AddClientsController')
 const AddProjectsController=require('../controller/AddProjectsContoller')
 const ProposalaController=require('../controller/ProposalsController')
+const AccessLinksController=require('../controller/AccessLinksController')
 const router = express.Router()
 // ADMIN REGISTER
 router.post('/api/adminregister', UsersController.adminRegister)
@@ -26,4 +27,14 @@ router.get('/api/getproposal',jwtMiddleware,ProposalaController.listProposals)
 router.put('/api/updateproposal/:id',jwtMiddleware,multerConfig.single('document'),ProposalaController.updateProposals)
 //DELETE PROPOSALS
 router.delete('/api/deleteproposal/:id',jwtMiddleware,ProposalaController.deleteProposals)
+//GENEATE LINK(ADMIN)
+router.post('/api/links/generate',jwtMiddleware,AccessLinksController.generateLink)
+//REVOKE LINK(ADMIN)
+router.post('/api/links/revoke',jwtMiddleware,AccessLinksController.revokeLink)
+//UNREVOKED LINK
+router.post('/api/links/unrevoke',jwtMiddleware,AccessLinksController.unrevokeLink)
+//GET PROPOSAL BY TOKEN (CLIENT)
+router.get('/api/public/proposal/:token',AccessLinksController.getProposalByToken)
+//VERIFY BY PASSWORD
+router.post('/api/public/verify-password',AccessLinksController.verifyByPassword)
 module.exports = router
