@@ -2,16 +2,17 @@ const mongoose=require('mongoose')
 const auditlogSchema=new mongoose.Schema({
 action:{
     type:String,
+    enum:['proposal_created','link_generated','link_revoked','link_unrevoked','client_accessed','signature_submitted'],
     required:true
 },
 proposalId:{
     type:mongoose.Schema.Types.ObjectId,
-    required:true,
-    ref: 'Proposal'//without only get proposlid otherwise get proposal document data
+    ref: 'Proposal'
 },
-performedBy:{
-    type:String,
-    required:true
+performedBy:String,
+timestamp:{
+    type:Date,
+    default:Date.now
 }
-},{timestamps:true})
+},{ timestamps: true })
 module.exports=mongoose.model('AuditLog',auditlogSchema)

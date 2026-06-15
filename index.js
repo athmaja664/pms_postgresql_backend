@@ -2,7 +2,7 @@ const express = require('express')
 const db = require('./config/db')
 const cors = require('cors')
 const router=require('./router/routes')
-const pmsServer = express()//exps obj
+const pmsServer = express()
 pmsServer.use(cors())
 pmsServer.use(express.json())
 pmsServer.use(router)

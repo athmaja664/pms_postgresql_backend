@@ -5,21 +5,22 @@ const signatureSchema = new mongoose.Schema({
          ref: 'Proposal',
         required: true
     },
-    name: {
-        type: String,
-        required: true,
-        trim: true
+    clientName:String,
+    clientEmail:String,
+    decision:{
+        type:String,
+        enum:['Accepted','Rejected'],
+        required:true
     },
-    email: {
-        type: String,
-        required: true,
-        lowercase: true,
-        trim: true,
-        match: [/^\S+@\S+\.\S+$/, 'Please use a valid email']
+    signatureMethod:{
+        type:String,
+        enum:['draw','upload']
     },
-    ipAddress: {
-        type: String,
-        required: true,
+    signatureImageUrl:String,
+    ipAddress:String,
+    signedAt:{
+        type:Date,
+        default:Date.now
     }
 }, { timestamps: true })
 module.exports = mongoose.model('Signature', signatureSchema)

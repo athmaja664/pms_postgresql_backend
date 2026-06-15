@@ -1,3 +1,4 @@
+const AuditLogs = require('../models/AuditLogs')
 const Proposal = require('../models/Proposals')
 
 //CREATE PROPOSALS
@@ -11,6 +12,9 @@ exports.createProposals=async(req,res)=>{
     }
     const newProposal=new Proposal({clientId,projectId,cost,status,documentUrl,description})
     await newProposal.save()
+    await AuditLogs.create({action:'proposal_created',
+        proposalId:newProposal._id,performedBy:'Admin'
+    })
     res.status(200).json({message:"New Proposal Created",newProposal})
     }
     catch(err){
@@ -52,6 +56,18 @@ exports.deleteProposals=async(req,res)=>{
      const{id}=req.params
      const deleteProposal=await Proposal.findByIdAndDelete(id)
      res.status(200).json({message:"Proposal Deleted Successfully"})
+    }catch(err){
+        res.status(500).json({error:err.message})
+    }
+}
+
+//UPDATE STATUS TO SENT
+exports.updatePrposalStatus=async(req,res)=>{
+    try{
+        const{id}=req.params
+        const{status}=req.body
+        const updated=await Proposal.findByIdAndUpdate(id,{status},{new:true})
+        res.status(200).json({message:"status updated",updated})
     }catch(err){
         res.status(500).json({error:err.message})
     }

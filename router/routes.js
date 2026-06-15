@@ -6,6 +6,8 @@ const AddClientsController=require('../controller/AddClientsController')
 const AddProjectsController=require('../controller/AddProjectsContoller')
 const ProposalaController=require('../controller/ProposalsController')
 const AccessLinksController=require('../controller/AccessLinksController')
+const Signaturestroller=require('../controller/SignaturesController')
+const AuditLogsController=require('../controller/AuditLogsController')
 const router = express.Router()
 // ADMIN REGISTER
 router.post('/api/adminregister', UsersController.adminRegister)
@@ -37,4 +39,14 @@ router.post('/api/links/unrevoke',jwtMiddleware,AccessLinksController.unrevokeLi
 router.get('/api/public/proposal/:token',AccessLinksController.getProposalByToken)
 //VERIFY BY PASSWORD
 router.post('/api/public/verify-password',AccessLinksController.verifyByPassword)
+//GET LINK BY PROPOSAL
+router.get('/api/links/proposal/:proposalId',jwtMiddleware,AccessLinksController.getLinkByProposal)
+//SUBMITSIGNATURE
+router.post('/api/submitsignature',multerConfig.single('signatureFile'),Signaturestroller.submitSignature)
+//GET AUDITLOG
+router.get('/api/auditlogs',jwtMiddleware,AuditLogsController.getAuditLogs)
+//GET SIGNATURE BY PROPOSAL
+router.get('/api/signature/:proposalId', jwtMiddleware, Signaturestroller.getSignatureByProposal)
+//UPDATE STATUS TO SENT
+router.put('/api/updatestatus/:id',jwtMiddleware,ProposalaController.updatePrposalStatus)
 module.exports = router
