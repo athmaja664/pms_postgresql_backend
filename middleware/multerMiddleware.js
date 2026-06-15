@@ -1,24 +1,30 @@
-const cloudinary = require('cloudinary').v2
-const { CloudinaryStorage } = require('multer-storage-cloudinary')
-const multer = require('multer')
+const multer = require("multer")
+const path = require("path")
+const fs = require("fs")
 
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-})
-
-const storage = new CloudinaryStorage({
-    cloudinary,
-    params: async (req, file) => {
-        const isPDF = file.mimetype === 'application/pdf'  
-        return {
-            folder: 'pms_uploads',
-            resource_type: isPDF ? 'raw' : 'image',
-            public_id: `file_${Date.now()}`
-        }
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadPath = file.mimetype === 'application/pdf' 
+            ? './uploads' 
+            : './uploads/signatures'
+        fs.mkdirSync(uploadPath, { recursive: true })
+        cb(null, uploadPath) 
+    },
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname)
+        const prefix = file.mimetype === 'application/pdf' ? 'pdf' : 'sig'
+        cb(null, `${prefix}-${Date.now()}${ext}`)
     }
 })
 
-const multerConfig = multer({ storage })
+const fileFilter = (req, file, cb) => {
+    const allowed = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg']
+    if (allowed.includes(file.mimetype)) {
+        cb(null, true)
+    } else {
+        cb(null, false)
+    }
+}
+
+const multerConfig = multer({ storage, fileFilter })
 module.exports = multerConfig
