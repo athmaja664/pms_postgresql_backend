@@ -11,9 +11,10 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
     cloudinary,
     params: async (req, file) => {
+        const isPDF = file.mimetype === 'application/pdf'  
         return {
             folder: 'pms_uploads',
-            resource_type: 'auto',
+            resource_type: isPDF ? 'raw' : 'image',
             public_id: `file_${Date.now()}`
         }
     }
