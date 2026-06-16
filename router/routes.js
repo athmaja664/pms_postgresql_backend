@@ -49,4 +49,7 @@ router.get('/api/auditlogs',jwtMiddleware,AuditLogsController.getAuditLogs)
 router.get('/api/signature/:proposalId', jwtMiddleware, Signaturestroller.getSignatureByProposal)
 //UPDATE STATUS TO SENT
 router.put('/api/updatestatus/:id',jwtMiddleware,ProposalaController.updatePrposalStatus)
+// DELETE EMPTY LOGS
+// DELETE EMPTY LOGS
+router.delete('/api/auditlogs/clear-empty', jwtMiddleware, AuditLogsController.clearEmptyLogs)
 module.exports = router

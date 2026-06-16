@@ -6,7 +6,7 @@ action:{
     required:true
 },
 proposalId:{
-    type:mongoose.Schema.Types.ObjectId,
+    type:mongoose.Schema.Types.Mixed,
     ref: 'Proposal'
 },
 performedBy:String,
