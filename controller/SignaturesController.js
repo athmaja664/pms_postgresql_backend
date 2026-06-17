@@ -60,21 +60,22 @@ exports.submitSignature = async (req, res) => {
 
         let signatureImageUrl = null
         let sigImageBuffer = null  // keep buffer for PDF embedding
+        let isPng = true
 
         if (signatureMethod === 'draw') {
-            // convert base64 to buffer
-            const base64Data = signatureBase64.replace(/^data:image\/png;base64,/, '')
-            sigImageBuffer = Buffer.from(base64Data, 'base64')
-            // upload to cloudinary
-            const uploadResult = await uploadToCloudinary(sigImageBuffer, 'proposalhub/signatures', 'image')
-            signatureImageUrl = uploadResult.secure_url
-        }
+    const base64Data = signatureBase64.replace(/^data:image\/png;base64,/, '')
+    sigImageBuffer = Buffer.from(base64Data, 'base64')
+    const uploadResult = await uploadToCloudinary(sigImageBuffer, 'proposalhub/signatures', 'image')
+    signatureImageUrl = uploadResult.secure_url
+    isPng = true
+}
 
-        if (signatureMethod === 'upload') {
-            sigImageBuffer = req.file.buffer  // keep buffer for PDF
-            const uploadResult = await uploadToCloudinary(sigImageBuffer, 'proposalhub/signatures', 'image')
-            signatureImageUrl = uploadResult.secure_url
-        }
+if (signatureMethod === 'upload') {
+    sigImageBuffer = req.file.buffer
+    const uploadResult = await uploadToCloudinary(sigImageBuffer, 'proposalhub/signatures', 'image')
+    signatureImageUrl = uploadResult.secure_url
+    isPng = req.file.mimetype === 'image/png'
+}
 
         // --- GENERATE PDF CERTIFICATE using buffer directly ---
         const pdfDoc = await PDFDocument.create()
@@ -105,7 +106,9 @@ exports.submitSignature = async (req, res) => {
         })
 
         // embed signature using buffer directly — no fetch needed!
-        const sigImage = await pdfDoc.embedPng(sigImageBuffer)
+   const sigImage = isPng
+    ? await pdfDoc.embedPng(sigImageBuffer)
+    : await pdfDoc.embedJpg(sigImageBuffer)
         page.drawText('Signature :', { x: 60, y: 80, size: 12, font: regular, color: rgb(0.4, 0.4, 0.4) })
         page.drawImage(sigImage, { x: 60, y: 20, width: 150, height: 50 })
 
@@ -138,10 +141,10 @@ exports.submitSignature = async (req, res) => {
         await AuditLogs.create({ action: 'signature_submitted', proposalId, performedBy: proposal.clientId.name })
         await proposals.findByIdAndUpdate(proposalId, { status: 'Accepted' })
         res.status(200).json({ message: 'Signature submitted successfully', newSignature })
-
-    } catch (err) {
-        res.status(500).json({ error: err.message })
-    }
+} catch (err) {
+    console.log('Submit signature error:', err)
+    res.status(500).json({ error: err.message })
+}
 }
 
 exports.getSignatureByProposal = async (req, res) => {
