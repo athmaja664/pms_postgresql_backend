@@ -14,7 +14,7 @@ const uploadToCloudinary = (buffer) => {
         const stream = cloudinary.uploader.upload_stream(
             { 
                 folder: 'proposalhub/proposals', 
-                resource_type: 'raw'
+                resource_type: 'auto'
             },
             (error, result) => {
                 if (error) reject(error)
