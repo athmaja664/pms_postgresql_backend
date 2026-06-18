@@ -1,4 +1,6 @@
 const AuditLog = require('../models/AuditLogs')
+ const Proposal = require('../models/Proposals')
+        
 exports.getAuditLogs = async (req, res) => {
     try {
         const logs = await AuditLog.find()
@@ -21,16 +23,10 @@ exports.getAuditLogs = async (req, res) => {
 // DELETE EMPTY LOGS
  exports.clearEmptyLogs = async (req, res) => {
     try {
-        const Proposal = require('../models/Proposals')
-        
-        // get all valid proposal IDs
+       
         const validProposals = await Proposal.find({}, '_id')
         const validIds = validProposals.map(p => p._id.toString())
-
-        // get all logs
         const allLogs = await AuditLog.collection.find({}).toArray()
-        
-        // find logs whose proposalId doesn't exist in proposals
         const orphanIds = allLogs
             .filter(log => log.proposalId && !validIds.includes(log.proposalId.toString()))
             .map(log => log._id)

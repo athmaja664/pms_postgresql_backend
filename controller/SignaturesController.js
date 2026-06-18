@@ -59,12 +59,12 @@ exports.submitSignature = async (req, res) => {
         }
 
         let signatureImageUrl = null
-        let sigImageBuffer = null  // keep buffer for PDF embedding
+        let sigImageBuffer = null 
         let isPng = true
 
         if (signatureMethod === 'draw') {
     const base64Data = signatureBase64.replace(/^data:image\/png;base64,/, '')
-    sigImageBuffer = Buffer.from(base64Data, 'base64')
+    sigImageBuffer = Buffer.from(base64Data, 'base64')//base64 to image data
     const uploadResult = await uploadToCloudinary(sigImageBuffer, 'proposalhub/signatures', 'image')
     signatureImageUrl = uploadResult.secure_url
     isPng = true
@@ -77,7 +77,6 @@ if (signatureMethod === 'upload') {
     isPng = req.file.mimetype === 'image/png'
 }
 
-        // --- GENERATE PDF CERTIFICATE using buffer directly ---
         const pdfDoc = await PDFDocument.create()
         const page = pdfDoc.addPage([600, 400])
         const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
@@ -105,7 +104,7 @@ if (signatureMethod === 'upload') {
             })
         })
 
-        // embed signature using buffer directly — no fetch needed!
+        // embed signature using buffer directly 
    const sigImage = isPng
     ? await pdfDoc.embedPng(sigImageBuffer)
     : await pdfDoc.embedJpg(sigImageBuffer)

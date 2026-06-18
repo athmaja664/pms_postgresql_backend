@@ -1,7 +1,6 @@
 const multer = require("multer")
-const path = require("path")
+// const path = require("path")
 
-// memory storage - files go to buffer, not disk
 const storage = multer.memoryStorage()
 
 const fileFilter = (req, file, cb) => {
