@@ -42,7 +42,7 @@ exports.revokeLink = async (req, res) => {
         }
         accessLink.isRevoked = true
         await accessLink.save()
-        await AuditLogs.create({ action: 'link_revoked', proposalId: accesssLink.proposalId, performedBy: 'Admin' })
+        await AuditLogs.create({ action: 'link_revoked', proposalId: accessLink.proposalId, performedBy: 'Admin' })
         res.status(200).json({ message: "Link Revoked Successfully" })
     } catch (err) {
         res.status(500).json({ error: err.message })
@@ -105,6 +105,9 @@ exports.verifyByPassword = async (req, res) => {
             return res.status(401).json({ message: "Invalid Password" })
         }
         const proposal = await Proposals.findById(accessLink.proposalId).populate('clientId').populate('projectId')
+        if(proposal.status==="Accepted" ||proposal.status==="Rejected"){
+            return res.status(200).json({message: "Already responded",alreadyResponded: true,decision: proposal.status,proposal})
+        }
         res.status(200).json({ message: "Access Granted", proposal })
     } catch (err) {
         return res.status(500).json({ error: err.message })
@@ -118,8 +121,8 @@ exports.getLinkByProposal = async (req, res) => {
         if (!link) {
             return res.status(404).json({ message: "link not found" })
         } else {
+            await AuditLogs.create({action:'client_accessed',proposalId: link.proposalId,performedBy:'client'})
             return res.status(200).json(link)
-            await AuditLogs.create({action:'client_accessed',proposalId:accessLink.proposalId,performedBy:'client'})
         }
     } catch (err) {
         res.status(500).json({ error: err.message })
