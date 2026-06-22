@@ -50,6 +50,7 @@ router.get('/api/signature/:proposalId', jwtMiddleware, Signaturestroller.getSig
 //UPDATE STATUS TO SENT
 router.put('/api/updatestatus/:id',jwtMiddleware,ProposalaController.updatePrposalStatus)
 // DELETE EMPTY LOGS
-// DELETE EMPTY LOGS
 router.delete('/api/auditlogs/clear-empty', jwtMiddleware, AuditLogsController.clearEmptyLogs)
+//UPDATE ADMIN PROFILE
+router.put('/api/updateadmin',jwtMiddleware,UsersController.updateAdmin)
 module.exports = router
