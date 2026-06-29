@@ -1,6 +1,4 @@
-const Signature = require('../models/Signatures')
-const proposals = require('../models/Proposals')
-const AuditLogs = require('../models/AuditLogs')
+const con = require('../config/db')
 const cloudinary = require('cloudinary').v2
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib')
 
@@ -27,23 +25,37 @@ exports.submitSignature = async (req, res) => {
     try {
         const { proposalId, decision, signatureMethod, signatureBase64 } = req.body
 
-        if (decision === 'Rejected') {
-            const proposal = await proposals.findById(proposalId).populate('clientId')
-            const newSignature = await Signature.findOneAndUpdate(
-                { proposalId },
-                {
-                    proposalId,
-                    clientName: proposal.clientId.name,
-                    clientEmail: proposal.clientId.email,
-                    decision: 'Rejected',
-                    ipAddress: req.socket.remoteAddress,
-                    signedAt: Date.now()
-                },
-                { upsert: true, new: true }
-            )
-            await proposals.findByIdAndUpdate(proposalId, { status: 'Rejected' })
-            return res.status(200).json({ message: 'Proposal rejected successfully', newSignature })
+        // get proposal with client and project info
+        const proposalResult = await con.query(`
+            SELECT proposals.*,
+                   clients.name AS client_name, clients.email AS client_email,
+                   projects.project_name
+            FROM proposals
+            LEFT JOIN clients ON proposals.client_id = clients.id
+            LEFT JOIN projects ON proposals.project_id = projects.id
+            WHERE proposals.id=$1
+        `, [proposalId])
+        const proposal = proposalResult.rows[0]
+        if (!proposal) {
+            return res.status(404).json({ error: 'Proposal not found' })
         }
+
+        const ip = req.socket.remoteAddress
+
+     if (decision === 'Rejected') {
+    await con.query(`
+        INSERT INTO signatures(proposal_id, client_name, client_email, decision, ip_address, signed_at)
+        VALUES($1,$2,$3,$4,$5,NOW())
+        ON CONFLICT (proposal_id) DO UPDATE SET
+        decision=$4, ip_address=$5, signed_at=NOW()
+    `, [proposalId, proposal.client_name, proposal.client_email, 'Rejected', ip])
+
+    await con.query('UPDATE proposals SET status=$1 WHERE id=$2', ['Rejected', proposalId])
+    
+    // fetch the saved signature to return it
+    const sigResult = await con.query('SELECT * FROM signatures WHERE proposal_id=$1', [proposalId])
+    return res.status(200).json({ message: 'Proposal rejected successfully', newSignature: sigResult.rows[0] })
+}
 
         if (signatureMethod === 'draw' && !signatureBase64) {
             return res.status(400).json({ error: 'Signature drawing is required' })
@@ -52,31 +64,26 @@ exports.submitSignature = async (req, res) => {
             return res.status(400).json({ error: 'File upload is required' })
         }
 
-        const ip = req.socket.remoteAddress
-        const proposal = await proposals.findById(proposalId).populate('clientId').populate('projectId')
-        if (!proposal) {
-            return res.status(404).json({ error: 'Proposal not found' })
-        }
-
         let signatureImageUrl = null
-        let sigImageBuffer = null 
+        let sigImageBuffer = null
         let isPng = true
 
         if (signatureMethod === 'draw') {
-    const base64Data = signatureBase64.replace(/^data:image\/png;base64,/, '')
-    sigImageBuffer = Buffer.from(base64Data, 'base64')//base64 to image data
-    const uploadResult = await uploadToCloudinary(sigImageBuffer, 'proposalhub/signatures', 'image')
-    signatureImageUrl = uploadResult.secure_url
-    isPng = true
-}
+            const base64Data = signatureBase64.replace(/^data:image\/png;base64,/, '')
+            sigImageBuffer = Buffer.from(base64Data, 'base64')
+            const uploadResult = await uploadToCloudinary(sigImageBuffer, 'proposalhub/signatures', 'image')
+            signatureImageUrl = uploadResult.secure_url
+            isPng = true
+        }
 
-if (signatureMethod === 'upload') {
-    sigImageBuffer = req.file.buffer
-    const uploadResult = await uploadToCloudinary(sigImageBuffer, 'proposalhub/signatures', 'image')
-    signatureImageUrl = uploadResult.secure_url
-    isPng = req.file.mimetype === 'image/png'
-}
+        if (signatureMethod === 'upload') {
+            sigImageBuffer = req.file.buffer
+            const uploadResult = await uploadToCloudinary(sigImageBuffer, 'proposalhub/signatures', 'image')
+            signatureImageUrl = uploadResult.secure_url
+            isPng = req.file.mimetype === 'image/png'
+        }
 
+        // generate PDF certificate
         const pdfDoc = await PDFDocument.create()
         const page = pdfDoc.addPage([600, 400])
         const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
@@ -91,9 +98,9 @@ if (signatureMethod === 'upload') {
         })
 
         const details = [
-            `Client Name   : ${proposal.clientId.name}`,
-            `Client Email  : ${proposal.clientId.email}`,
-            `Project       : ${proposal.projectId?.projectName || ''}`,
+            `Client Name   : ${proposal.client_name}`,
+            `Client Email  : ${proposal.client_email}`,
+            `Project       : ${proposal.project_name || ''}`,
             `Decision      : Accepted`,
             `Signed On     : ${new Date().toISOString().slice(0, 10)}`,
             `IP Address    : ${ip}`,
@@ -104,53 +111,50 @@ if (signatureMethod === 'upload') {
             })
         })
 
-        // embed signature using buffer directly 
-   const sigImage = isPng
-    ? await pdfDoc.embedPng(sigImageBuffer)
-    : await pdfDoc.embedJpg(sigImageBuffer)
+        const sigImage = isPng
+            ? await pdfDoc.embedPng(sigImageBuffer)
+            : await pdfDoc.embedJpg(sigImageBuffer)
         page.drawText('Signature :', { x: 60, y: 80, size: 12, font: regular, color: rgb(0.4, 0.4, 0.4) })
         page.drawImage(sigImage, { x: 60, y: 20, width: 150, height: 50 })
 
         const pdfBytes = await pdfDoc.save()
-
-        // upload certificate to cloudinary
         const certUpload = await uploadToCloudinary(
-            Buffer.from(pdfBytes),
-            'proposalhub/certificates',
-            'raw'
+            Buffer.from(pdfBytes), 'proposalhub/certificates', 'raw'
         )
         const certificateUrl = certUpload.secure_url
 
-        const newSignature = await Signature.findOneAndUpdate(
-            { proposalId },
-            {
-                proposalId,
-                clientName: proposal.clientId.name,
-                clientEmail: proposal.clientId.email,
-                decision: 'Accepted',
-                signatureMethod,
-                signatureImageUrl,
-                certificateUrl,
-                ipAddress: ip,
-                signedAt: Date.now()
-            },
-            { upsert: true, new: true }
-        )
+        await con.query(`
+            INSERT INTO signatures(proposal_id, client_name, client_email, decision, signature_method, signature_image_url, certificate_url, ip_address, signed_at)
+            VALUES($1,$2,$3,$4,$5,$6,$7,$8,NOW())
+            ON CONFLICT (proposal_id) DO UPDATE SET
+            decision=$4, signature_method=$5, signature_image_url=$6, certificate_url=$7, ip_address=$8, signed_at=NOW()
+        `, [proposalId, proposal.client_name, proposal.client_email, 'Accepted', signatureMethod, signatureImageUrl, certificateUrl, ip])
 
-        await AuditLogs.create({ action: 'signature_submitted', proposalId, performedBy: proposal.clientId.name })
-        await proposals.findByIdAndUpdate(proposalId, { status: 'Accepted' })
-        res.status(200).json({ message: 'Signature submitted successfully', newSignature })
-} catch (err) {
-    console.log('Submit signature error:', err)
-    res.status(500).json({ error: err.message })
-}
+        await con.query(
+            'INSERT INTO audit_logs(action,proposal_id,performed_by) VALUES($1,$2,$3)',
+            ['signature_submitted', proposalId, proposal.client_name]
+        )
+        await con.query('UPDATE proposals SET status=$1 WHERE id=$2', ['Accepted', proposalId])
+
+// fetch saved signature to return
+const sigResult = await con.query('SELECT * FROM signatures WHERE proposal_id=$1', [proposalId])
+res.status(200).json({ message: 'Signature submitted successfully', newSignature: sigResult.rows[0] })
+    } catch (err) {
+        console.log('Submit signature error:', err)
+        res.status(500).json({ error: err.message })
+    }
 }
 
 exports.getSignatureByProposal = async (req, res) => {
     try {
-        const signature = await Signature.findOne({ proposalId: req.params.proposalId })
-        if (!signature) return res.status(404).json({ error: 'No signature found' })
-        res.status(200).json(signature)
+        const result = await con.query(
+            'SELECT * FROM signatures WHERE proposal_id=$1',
+            [req.params.proposalId]
+        )
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'No signature found' })
+        }
+        res.status(200).json(result.rows[0])
     } catch (err) {
         res.status(500).json({ error: err.message })
     }

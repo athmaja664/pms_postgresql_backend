@@ -1,18 +1,16 @@
-const mongoose=require('mongoose')
-const auditlogSchema=new mongoose.Schema({
-action:{
-    type:String,
-    enum:['proposal_created','link_generated','link_revoked','link_unrevoked','client_accessed','signature_submitted'],
-    required:true
-},
-proposalId:{
-    type:mongoose.Schema.Types.Mixed,
-    ref: 'Proposal'
-},
-performedBy:String,
-timestamp:{
-    type:Date,
-    default:Date.now
+const con = require('../config/db')
+
+const createAuditLogsTable = async () => {
+    await con.query(`
+        CREATE TABLE IF NOT EXISTS audit_logs (
+            id SERIAL PRIMARY KEY,
+            action VARCHAR(255) NOT NULL,
+            proposal_id INTEGER REFERENCES proposals(id) ON DELETE SET NULL,
+            performed_by VARCHAR(255),
+            created_at TIMESTAMP DEFAULT NOW()
+        )
+    `)
+    console.log('Audit logs table ready')
 }
-},{ timestamps: true })
-module.exports=mongoose.model('AuditLog',auditlogSchema)
+
+module.exports = createAuditLogsTable

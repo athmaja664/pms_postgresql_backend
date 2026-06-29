@@ -1,13 +1,16 @@
 require('dotenv').config()
-const mongoose = require('mongoose')
-dbString = process.env.connectionString
-mongoose.connect(dbString).then(() => {
-    console.log('connect to mongodb');
-
+const { Client } = require('pg')
+const con=new Client({
+    host:process.env.DB_HOST,
+    user:process.env.DB_USER,
+    port:process.env.DB_PORT,
+    password:process.env.DB_PASSWORD,
+    database:process.env.DB_DATABASE
 })
-    .catch((err) => {
-        console.log('error:', err);
 
-    })
-
-
+con.connect().then(()=>{
+    console.log("connected");
+    
+}).catch((err)=>{console.log(err);
+})
+module.exports=con
