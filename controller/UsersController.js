@@ -26,15 +26,15 @@ exports.adminLogin = async (req, res) => {
     try {
         const { email, password } = req.body
         const result = await con.query('SELECT * FROM users WHERE email = $1', [email])
-        const user = result.rows[0]
-        if (!user) {
+       const user = result.rows[0]
+        if (!user) { 
             return res.status(404).json({ message: "Admin not found" })
         }
         const isMatch = await bcrypt.compare(password, user.password)
         if (!isMatch) {
             return res.status(401).json({ message: "Invalid password" })
         }
-        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1d' })
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' })
         res.status(200).json({ message: "Login successful", token, user })
     } catch (err) {
         res.status(500).json({ error: err.message })

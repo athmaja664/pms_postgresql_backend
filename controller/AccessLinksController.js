@@ -16,8 +16,8 @@ exports.generateLink = async (req, res) => {
         }
         if (existingLink.rows.length > 0 && forceRegenerate) {
     await con.query('DELETE FROM access_links WHERE proposal_id=$1', [proposalId])
-    await con.query('DELETE FROM signatures WHERE proposal_id=$1', [proposalId])  // ← add this
-    await con.query('UPDATE proposals SET status=$1 WHERE id=$2', ['Sent', proposalId])  // ← reset status
+    await con.query('DELETE FROM signatures WHERE proposal_id=$1', [proposalId])  
+    await con.query('UPDATE proposals SET status=$1 WHERE id=$2', ['Sent', proposalId]) 
 }
         console.log(forceRegenerate)
         const token = crypto.randomBytes(32).toString('hex')

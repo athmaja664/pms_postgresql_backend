@@ -92,7 +92,7 @@ exports.updateProposals = async (req, res) => {
         )
         res.status(200).json({ message: "Proposal updated", updatedProposal: result.rows[0] })
     } catch (err) {
-        console.log('UPDATE ERROR:', err.message)  // ← add this
+        console.log('UPDATE ERROR:', err.message) 
         res.status(500).json({ error: err.message })
     }
 }
