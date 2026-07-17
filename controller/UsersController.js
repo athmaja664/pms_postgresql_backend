@@ -84,8 +84,8 @@ exports.forgotPassword = async (req, res) => {
         const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '30min' })
         const expiry = new Date(Date.now() + 15 * 60 * 1000)
         await con.query('UPDATE users SET reset_token=$1,reset_token_expiry=$2 WHERE id=$3', [token, expiry, user.id])
-        const resetLink = `http://localhost:5173/reset-password/${token}`
-
+        // const resetLink = `http://localhost:5173/reset-password/${token}`
+           const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`
         await transporter.sendMail({
             from: process.env.EMAIL,
             to: user.email,
@@ -96,9 +96,14 @@ exports.forgotPassword = async (req, res) => {
                 <a href="${resetLink}">${resetLink}</a>
             `})
         return res.status(200).json({ message: "Reset the link successfully" })
-    } catch (err) {
-        return res.status(500).json({ error: err.message })
-    }
+    }  catch (err) {
+    console.log("Forgot Password Error:", err);
+
+    return res.status(500).json({
+        error: err.message,
+        stack: err.stack
+    });
+}
 }
 
 //RESET PASSWORD
