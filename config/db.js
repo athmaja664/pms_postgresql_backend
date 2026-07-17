@@ -17,3 +17,4 @@ con.connect()
 .catch(err => console.log(err))
 
 module.exports = con
+
