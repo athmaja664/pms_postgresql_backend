@@ -13,10 +13,18 @@ const router = express.Router()
 router.post('/api/adminregister', UsersController.adminRegister)
 //ADMIN LOGIN
 router.post('/api/adminlogin', UsersController.adminLogin)
+//FORGOT PASSWORD
+router.post('/api/forgot-password', UsersController.forgotPassword)
+//RESET PASSWORD
+router.post('/api/reset-password/:token', UsersController.resetPassword)
 //ADD CLIENT
 router.post('/api/addclient',jwtMiddleware,AddClientsController.addClients)
 //GET CLIENT FOR ADD PROJECT
 router.get('/api/getclient',jwtMiddleware,AddClientsController.getClients)
+//UPDATE CLIENT
+router.put('/api/updateClient/:id',jwtMiddleware,AddClientsController.updateClient)
+//DELETE CLIENTS
+router.delete('/api/deleteclient/:id',jwtMiddleware,AddClientsController.deleteClients)
 //ADD PROJECT
 router.post('/api/addproject',jwtMiddleware,AddProjectsController.addProjects)
 //GET PROJECT
