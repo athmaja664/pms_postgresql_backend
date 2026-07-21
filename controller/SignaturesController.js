@@ -49,8 +49,11 @@ exports.submitSignature = async (req, res) => {
         ON CONFLICT (proposal_id) DO UPDATE SET
         decision=$4, ip_address=$5, signed_at=NOW()
     `, [proposalId, proposal.client_name, proposal.client_email, 'Rejected', ip])
-
-    await con.query('UPDATE proposals SET status=$1 WHERE id=$2', ['Rejected', proposalId])
+ 
+await con.query(`
+    UPDATE proposals SET status_id = (SELECT id FROM proposal_status WHERE status_name = 'Rejected')
+    WHERE id=$1
+`, [proposalId])
     
     // fetch the saved signature to return it
     const sigResult = await con.query('SELECT * FROM signatures WHERE proposal_id=$1', [proposalId])
@@ -134,7 +137,10 @@ exports.submitSignature = async (req, res) => {
             'INSERT INTO audit_logs(action,proposal_id,performed_by) VALUES($1,$2,$3)',
             ['signature_submitted', proposalId, proposal.client_name]
         )
-        await con.query('UPDATE proposals SET status=$1 WHERE id=$2', ['Accepted', proposalId])
+       await con.query(`
+    UPDATE proposals SET status_id = (SELECT id FROM proposal_status WHERE status_name = 'Accepted')
+    WHERE id=$1
+`, [proposalId])
 
 // fetch saved signature to return
 const sigResult = await con.query('SELECT * FROM signatures WHERE proposal_id=$1', [proposalId])

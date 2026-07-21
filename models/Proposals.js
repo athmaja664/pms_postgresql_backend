@@ -1,5 +1,4 @@
 const con = require('../config/db')
-
 const createProposalTable = async () => {
     await con.query(`
         CREATE TABLE IF NOT EXISTS proposals (
@@ -7,7 +6,7 @@ const createProposalTable = async () => {
             client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
             project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
             cost NUMERIC,
-            status VARCHAR(255) DEFAULT 'Draft' CHECK(status IN('Draft','Sent','Accepted','Rejected','Archived')),
+            status_id INTEGER NOT NULL DEFAULT 1 REFERENCES proposal_status(id),
             document_url TEXT,
             description TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT NOW(),
@@ -16,8 +15,26 @@ const createProposalTable = async () => {
     `)
     console.log('Proposal table ready')
 }
-
 module.exports = createProposalTable
+
+// const createProposalTable = async () => {
+//     await con.query(`
+//         CREATE TABLE IF NOT EXISTS proposals (
+//             id SERIAL PRIMARY KEY,
+//             client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+//             project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+//             cost NUMERIC,
+//             status VARCHAR(255) DEFAULT 'Draft' CHECK(status IN('Draft','Sent','Accepted','Rejected','Archived')),
+//             document_url TEXT,
+//             description TEXT NOT NULL,
+//             created_at TIMESTAMP DEFAULT NOW(),
+//             updated_at TIMESTAMP DEFAULT NOW()
+//         )
+//     `)
+//     console.log('Proposal table ready')
+// }
+
+// module.exports = createProposalTable
 
 // const mongoose = require('mongoose')
 // const proposalSchema = new mongoose.Schema({

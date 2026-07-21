@@ -17,7 +17,10 @@ exports.generateLink = async (req, res) => {
         if (existingLink.rows.length > 0 && forceRegenerate) {
     await con.query('DELETE FROM access_links WHERE proposal_id=$1', [proposalId])
     await con.query('DELETE FROM signatures WHERE proposal_id=$1', [proposalId])  
-    await con.query('UPDATE proposals SET status=$1 WHERE id=$2', ['Sent', proposalId]) 
+    await con.query(`
+        UPDATE proposals SET status_id = (SELECT id FROM proposal_status WHERE status_name = 'Sent')
+        WHERE id=$1
+    `, [proposalId]) 
 }
         console.log(forceRegenerate)
         const token = crypto.randomBytes(32).toString('hex')
@@ -110,20 +113,22 @@ exports.verifyByPassword = async (req, res) => {
         const proposalResult = await con.query(`
             SELECT proposals.*,
                    clients.name AS client_name, clients.email AS client_email,
-                   projects.project_name
+                   projects.project_name,
+                   proposal_status.status_name
             FROM proposals
             LEFT JOIN clients ON proposals.client_id = clients.id
             LEFT JOIN projects ON proposals.project_id = projects.id
+            LEFT JOIN proposal_status ON proposals.status_id = proposal_status.id
             WHERE proposals.id=$1
         `, [accessLink.proposal_id])
         const proposal = proposalResult.rows[0]
 
-        if (proposal.status === "Accepted" || proposal.status === "Rejected") {
+        if (proposal.status_name === "Accepted" || proposal.status_name === "Rejected") {
     const sigResult = await con.query('SELECT * FROM signatures WHERE proposal_id=$1', [accessLink.proposal_id])
     return res.status(200).json({
         message: "Already responded",
         alreadyResponded: true,
-        decision: proposal.status,
+        decision: proposal.status_name,
         proposal,
         signature: sigResult.rows[0]
     })
@@ -152,16 +157,3 @@ exports.getLinkByProposal = async (req, res) => {
         res.status(500).json({ error: err.message })
     }
 }
-// exports.getLinkByProposal = async (req, res) => {
-//     try {
-//         const link = await AccessLink.findOne({ proposalId: req.params.proposalId })//match
-//         if (!link) {
-//             return res.status(404).json({ message: "link not found" })
-//         } else {
-//             await AuditLogs.create({action:'client_accessed',proposalId: link.proposalId,performedBy:'client'})
-//             return res.status(200).json(link)
-//         }
-//     } catch (err) {
-//         res.status(500).json({ error: err.message })
-//     }
-// }

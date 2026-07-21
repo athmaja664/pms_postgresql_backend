@@ -8,6 +8,7 @@ const ProposalaController=require('../controller/ProposalsController')
 const AccessLinksController=require('../controller/AccessLinksController')
 const Signaturestroller=require('../controller/SignaturesController')
 const AuditLogsController=require('../controller/AuditLogsController')
+const proposalStatusController=require('../controller/ProposalStatusController')
 const router = express.Router()
 // ADMIN REGISTER
 router.post('/api/adminregister', UsersController.adminRegister)
@@ -37,6 +38,8 @@ router.get('/api/getproposal',jwtMiddleware,ProposalaController.listProposals)
 router.put('/api/updateproposal/:id',jwtMiddleware,multerConfig.single('document'),ProposalaController.updateProposals)
 //DELETE PROPOSALS
 router.delete('/api/deleteproposal/:id',jwtMiddleware,ProposalaController.deleteProposals)
+//GET PROPOSAL STATUS
+router.get('/api/proposalstatus',jwtMiddleware,proposalStatusController.listProposalStatus)
 //GENEATE LINK(ADMIN)
 router.post('/api/links/generate',jwtMiddleware,AccessLinksController.generateLink)
 //REVOKE LINK(ADMIN)

@@ -1,7 +1,7 @@
 require('dotenv').config()
-const { Client } = require('pg')
+const { Pool } = require('pg')
 
-const con = new Client({
+const con = new Pool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     port: process.env.DB_PORT,
@@ -13,8 +13,14 @@ const con = new Client({
 })
 
 con.connect()
-.then(() => console.log("connected"))
+.then(client => {
+    console.log("connected")
+    client.release()
+})
 .catch(err => console.log(err))
 
-module.exports = con
+con.on('error', (err) => {
+    console.error('Unexpected error on idle client', err.message)
+})
 
+module.exports = con

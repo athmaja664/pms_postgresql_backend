@@ -26,7 +26,7 @@ const uploadToCloudinary = (buffer) => {
 // CREATE PROPOSALS
 exports.createProposals = async (req, res) => {
     try {
-        const { clientId, projectId, cost, status, description } = req.body
+        const { clientId, projectId, cost, statusId, description } = req.body
 
         let documentUrl = ""
         if (req.file) {
@@ -39,7 +39,7 @@ exports.createProposals = async (req, res) => {
             return res.status(400).json({ message: "Proposal Already Exist" })
         }
 
-        const result = await con.query('INSERT INTO proposals(client_id,project_id,cost,status,document_url,description) VALUES($1,$2,$3,$4,$5,$6) RETURNING *',[clientId,projectId,cost,status,documentUrl,description])
+        const result = await con.query('INSERT INTO proposals(client_id,project_id,cost,status_id,document_url,description) VALUES($1,$2,$3,$4,$5,$6) RETURNING *',[clientId,projectId,cost,statusId,documentUrl,description])
 
         const newProposal=result.rows[0]
 
@@ -61,10 +61,12 @@ exports.listProposals = async (req, res) => {
         const result = await con.query(`
             SELECT proposals.*, 
                    clients.name AS client_name, clients.email AS client_email,
-                   projects.project_name
+                   projects.project_name,
+                   proposal_status.status_name
             FROM proposals
             LEFT JOIN clients ON proposals.client_id = clients.id
             LEFT JOIN projects ON proposals.project_id = projects.id
+            LEFT JOIN proposal_status ON proposals.status_id = proposal_status.id
             ORDER BY proposals.created_at DESC
         `)
         res.status(200).json(result.rows)
@@ -77,7 +79,7 @@ exports.listProposals = async (req, res) => {
 exports.updateProposals = async (req, res) => {
     try {
         const { id } = req.params
-        const { cost, status, description } = req.body
+        const { cost, statusId, description } = req.body
         let documentUrl = req.body.documentUrl || ""
         if (req.file) {
             const uploaded = await uploadToCloudinary(req.file.buffer)
@@ -86,9 +88,9 @@ exports.updateProposals = async (req, res) => {
         const existing = await con.query('SELECT * FROM proposals WHERE id=$1', [id])
         const current = existing.rows[0]
         const result = await con.query(
-            `UPDATE proposals SET client_id=$1, project_id=$2, cost=$3, status=$4,
+            `UPDATE proposals SET client_id=$1, project_id=$2, cost=$3, status_id=$4,
              document_url=$5, description=$6, updated_at=NOW() WHERE id=$7 RETURNING *`,
-            [current.client_id, current.project_id, cost, status, documentUrl || current.document_url, description, id]
+            [current.client_id, current.project_id, cost, statusId, documentUrl || current.document_url, description, id]
         )
         res.status(200).json({ message: "Proposal updated", updatedProposal: result.rows[0] })
     } catch (err) {
@@ -112,8 +114,8 @@ exports.deleteProposals = async (req, res) => {
 exports.updatePrposalStatus = async (req, res) => {
     try {
         const { id } = req.params
-        const { status } = req.body
-        const result = await con.query('UPDATE proposals SET status=$1,updated_at=NOW() WHERE id=$2 RETURNING *',[status,id])
+        const { statusId } = req.body
+        const result = await con.query('UPDATE proposals SET status_id=$1,updated_at=NOW() WHERE id=$2 RETURNING *',[statusId,id])
         res.status(200).json({ message: "status updated", updated:result.rows[0] })
     } catch (err) {
         res.status(500).json({ error: err.message })
