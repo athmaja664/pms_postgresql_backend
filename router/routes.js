@@ -40,6 +40,14 @@ router.put('/api/updateproposal/:id',jwtMiddleware,multerConfig.single('document
 router.delete('/api/deleteproposal/:id',jwtMiddleware,ProposalaController.deleteProposals)
 //GET PROPOSAL STATUS
 router.get('/api/proposalstatus',jwtMiddleware,proposalStatusController.listProposalStatus)
+//GET SINGLE PROPOSAL STATUS
+router.get('/api/proposalstatus/:id',jwtMiddleware,proposalStatusController.getProposalStatusById)
+//CREATE PROPOSAL STATUS
+router.post('/api/proposalstatus',jwtMiddleware,proposalStatusController.createProposalStatus)
+//UPDATE PROPOSAL STATUS
+router.put('/api/proposalstatus/:id',jwtMiddleware,proposalStatusController.updateProposalStatus)
+//DELETE PROPOSAL STATUS
+router.delete('/api/proposalstatus/:id',jwtMiddleware,proposalStatusController.deleteProposalStatus)
 //GENEATE LINK(ADMIN)
 router.post('/api/links/generate',jwtMiddleware,AccessLinksController.generateLink)
 //REVOKE LINK(ADMIN)
