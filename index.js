@@ -10,14 +10,26 @@ const createAuditLogsTable = require('./models/AuditLogs')
 const createAccessLinkTable=require('./models/AccessLinks')
 const createSignaturesTable=require('./models/Signatures')
 const createProposalStatusTable=require('./models/proposalStatus')
-createProposalStatusTable()
-createUsersTable()
-createClientTable()
-createProjectTable()
-createProposalTables()
-createAuditLogsTable()
-createAccessLinkTable()  
-createSignaturesTable()
+async function createTables() {
+    await createProposalStatusTable();
+    await createUsersTable();
+    await createClientTable();
+    await createProjectTable();
+    await createProposalTables();
+    await createAuditLogsTable();
+    await createAccessLinkTable();
+    await createSignaturesTable();
+}
+
+createTables().catch(console.error);
+// createProposalStatusTable()
+// createUsersTable()
+// createClientTable()
+// createProjectTable()
+// createProposalTables()
+// createAuditLogsTable()
+// createAccessLinkTable()  
+// createSignaturesTable()
 const pmsServer = express()
 pmsServer.use(cors())
 pmsServer.use(express.json())
